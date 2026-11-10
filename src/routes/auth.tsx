@@ -1,17 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, GraduationCap, Loader2, MailCheck, PawPrint, Workflow } from "lucide-react";
+import { AlertCircle, ArrowLeft, GraduationCap, Loader2, MailCheck, PawPrint, Workflow } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import heroVet from "@/assets/hero-vet.jpg";
 import { Field } from "@/components/animals/ListBusinessDialog";
-import { GoogleButton } from "@/components/auth/GoogleButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError, linkErrorFromUrl } from "@/lib/auth-errors";
 import { AUTH_REDIRECT_KEY, safeRedirect } from "@/lib/auth-redirect";
 import { cn } from "@/lib/utils";
 
@@ -51,8 +50,23 @@ function AuthPage() {
   const [errors, setErrors] = useState<Partial<Record<"name" | "email" | "password", string | undefined>>>({});
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<{ email: string; kind: "confirm" | "reset" } | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  // Signed in (password, Google return, or already had a session) → go to the intended page.
+  // Keep the Sign in / Create account tab in sync when the link changes (e.g. header "Sign in").
+  useEffect(() => {
+    if (search.mode) setMode(search.mode);
+  }, [search.mode]);
+
+  // An email link that expired or was already used lands here with an error in the URL.
+  useEffect(() => {
+    const linkError = linkErrorFromUrl(window.location.hash, window.location.search);
+    if (!linkError) return;
+    setFormError(linkError);
+    setMode("signin");
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }, []);
+
+  // Signed in (password, email confirmation link, or already had a session) → go to the intended page.
   useEffect(() => {
     if (loading || !user) return;
     const stored = sessionStorage.getItem(AUTH_REDIRECT_KEY);
@@ -79,16 +93,13 @@ function AuthPage() {
   async function onSubmit(ev: FormEvent) {
     ev.preventDefault();
     if (!validate()) return;
+    setFormError(null);
     setBusy(true);
     try {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) {
-          toast.error(
-            error.message.toLowerCase().includes("confirm")
-              ? "Please confirm your email first — check your inbox."
-              : "That email and password don't match.",
-          );
+          setFormError(friendlyAuthError(error.message, "signin"));
           return;
         }
         toast.success("Welcome back!");
@@ -103,7 +114,13 @@ function AuthPage() {
           },
         });
         if (error) {
-          toast.error(error.message.toLowerCase().includes("registered") ? "That email already has an account — sign in instead." : error.message);
+          setFormError(friendlyAuthError(error.message, "signup"));
+          return;
+        }
+        // An existing confirmed email comes back with no identities: tell them to sign in.
+        if (data.user && data.user.identities?.length === 0) {
+          setFormError("That email already has an account — sign in instead.");
+          setMode("signin");
           return;
         }
         if (!data.session) setSentTo({ email: email.trim(), kind: "confirm" });
@@ -112,33 +129,23 @@ function AuthPage() {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) {
-          toast.error(error.message);
+          setFormError(friendlyAuthError(error.message, "reset"));
           return;
         }
         setSentTo({ email: email.trim(), kind: "reset" });
       }
+    } catch (err) {
+      setFormError(friendlyAuthError(err instanceof Error ? err.message : "", mode === "forgot" ? "reset" : mode));
     } finally {
       setBusy(false);
     }
-  }
-
-  async function onGoogle() {
-    setBusy(true);
-    sessionStorage.setItem(AUTH_REDIRECT_KEY, safeRedirect(search.redirect));
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth` });
-    if (result.error) {
-      toast.error("Google sign-in didn't complete. Please try again.");
-      setBusy(false);
-      return;
-    }
-    if (result.redirected) return;
-    // Session set — the effect above navigates.
   }
 
   function switchMode(m: Mode) {
     setMode(m);
     setErrors({});
     setSentTo(null);
+    setFormError(null);
   }
 
   return (
@@ -212,18 +219,14 @@ function AuthPage() {
               </div>
             )}
 
-            {mode !== "forgot" && (
-              <>
-                <div className="mt-6">
-                  <GoogleButton onClick={onGoogle} disabled={busy} />
-                </div>
-                <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="h-px flex-1 bg-border" /> or with email <span className="h-px flex-1 bg-border" />
-                </div>
-              </>
+            {formError && (
+              <div role="alert" className="mt-5 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                <span>{formError}</span>
+              </div>
             )}
 
-            <form onSubmit={onSubmit} className={cn("grid gap-4", mode === "forgot" && "mt-6")} noValidate>
+            <form onSubmit={onSubmit} className="mt-6 grid gap-4" noValidate>
               {mode === "signup" && (
                 <Field label="Full name" error={errors.name}>
                   <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Riya Shah" autoComplete="name" />
