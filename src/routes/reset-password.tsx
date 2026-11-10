@@ -77,12 +77,14 @@ function ResetPasswordPage() {
             </Button>
           </form>
         ) : (
+          <>
           <p className="mt-2 text-sm text-muted-foreground">
             {linkError ?? <>Open this page from the reset link in your email. Links expire after a while — request a new one from the sign-in page if needed.</>}
           </p>
           <Button variant="ghost" className="mt-4" asChild>
             <Link to="/auth">Go to sign in</Link>
           </Button>
+          </>
         )}
       </div>
     </div>
