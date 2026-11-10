@@ -14,7 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_day: string
+          contact_name: string
+          created_at: string
+          id: string
+          pet: string
+          phone: string
+          provider_id: string
+          provider_name: string
+          slot: string
+          user_id: string
+        }
+        Insert: {
+          booking_day: string
+          contact_name: string
+          created_at?: string
+          id?: string
+          pet: string
+          phone: string
+          provider_id: string
+          provider_name: string
+          slot: string
+          user_id?: string
+        }
+        Update: {
+          booking_day?: string
+          contact_name?: string
+          created_at?: string
+          id?: string
+          pet?: string
+          phone?: string
+          provider_id?: string
+          provider_name?: string
+          slot?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      enrollments: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          goal: string | null
+          id: string
+          mode: string
+          phone: string
+          program_id: string
+          program_title: string
+          slot: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          goal?: string | null
+          id?: string
+          mode?: string
+          phone: string
+          program_id: string
+          program_title: string
+          slot?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          goal?: string | null
+          id?: string
+          mode?: string
+          phone?: string
+          program_id?: string
+          program_title?: string
+          slot?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pets: {
+        Row: {
+          age_years: number | null
+          breed: string | null
+          created_at: string
+          id: string
+          name: string
+          species: string
+          user_id: string
+        }
+        Insert: {
+          age_years?: number | null
+          breed?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          species?: string
+          user_id?: string
+        }
+        Update: {
+          age_years?: number | null
+          breed?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          species?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          city: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
