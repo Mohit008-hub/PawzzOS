@@ -35,3 +35,6 @@ use the editor.
 - AI carousel generation runs through `createServerFn` in `src/lib/carousel.functions.ts`, which lazy-imports `src/lib/ai/gateway.server.ts`; keeps the AI key and prompts server-only.
 - Server functions return `{ ok: false, error, status }` instead of throwing for AI failures so the UI can show a friendly message.
 - Carousel slides are rendered by `SlideCard` with themes defined as `.slide-theme-*` CSS classes in `styles.css`; PNG export uses html-to-image on an offscreen 540px render at 2× (1080×1350).
+- Auth state comes from one `AuthProvider` (`src/hooks/use-auth.tsx`) mounted in `__root.tsx`; it owns the only `onAuthStateChange` listener so router/query invalidation happens in one place.
+- Signed-in-only pages live under `src/routes/_authenticated/` (client-only gate redirecting to `/auth?redirect=`); actions on public pages that need an account render `SignInGate` inline instead of redirecting.
+- User data (profiles, pets, bookings, enrollments) is read/written from the browser client under owner-only RLS; post-login redirects always pass through `safeRedirect` (tested in `src/test/auth-redirect.test.ts`).

@@ -1,6 +1,12 @@
-import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle2, Mail, MessageCircle, Sparkles, Ticket } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle2, Loader2, Mail, MessageCircle, Sparkles, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { z } from "zod";
+
+import { SignInGate } from "@/components/auth/SignInGate";
+import { useAuth, useProfile } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Field } from "@/components/animals/ListBusinessDialog";
 import { Button } from "@/components/ui/button";
@@ -41,6 +47,10 @@ export function RegistrationDialog({
   const [program, setProgram] = useState(programId ?? PROGRAMS[0]!.id);
   const [slot, setSlot] = useState(DEMO_SLOTS[0]);
   const [errors, setErrors] = useState<Partial<Record<"name" | "email" | "phone" | "goal", string>>>({});
+  const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
+  const profile = useProfile();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open) {
@@ -49,6 +59,14 @@ export function RegistrationDialog({
       if (programId) setProgram(programId);
     }
   }, [open, programId]);
+
+  // Prefill from the signed-in account.
+  useEffect(() => {
+    if (!open || !user) return;
+    setName((n) => n || profile.data?.full_name || "");
+    setEmail((e) => e || user.email || "");
+    setPhone((ph) => ph || profile.data?.phone || "");
+  }, [open, user, profile.data]);
 
   const p = PROGRAMS.find((x) => x.id === program)!;
 
@@ -66,7 +84,32 @@ export function RegistrationDialog({
     }
     if (step === 2 && !goal) e.goal = "Pick the goal closest to yours";
     setErrors(e);
-    if (Object.keys(e).length === 0) setStep((s) => Math.min(3, s + 1));
+    if (Object.keys(e).length > 0) return;
+    if (step === 2) return void save();
+    setStep((s) => Math.min(3, s + 1));
+  }
+
+  async function save() {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase.from("enrollments").insert({
+      user_id: user.id,
+      program_id: p.id,
+      program_title: p.title,
+      mode,
+      goal,
+      slot: mode === "demo" ? (slot ?? null) : null,
+      full_name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+    });
+    setSaving(false);
+    if (error) {
+      toast.error("Couldn't save your reservation. Please try again.");
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ["enrollments", user.id] });
+    setStep(3);
   }
 
   const firstName = name.trim().split(" ")[0];
@@ -74,6 +117,20 @@ export function RegistrationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
+        {!user ? (
+          <>
+            <DialogHeader className="sr-only">
+              <DialogTitle>Sign in to continue</DialogTitle>
+              <DialogDescription>An account is needed to reserve a seat.</DialogDescription>
+            </DialogHeader>
+            <SignInGate
+              tone="edu"
+              title={mode === "demo" ? "Sign in to book your demo" : "Sign in to reserve your seat"}
+              description="A free account keeps your class links, reminders and course progress in one place."
+            />
+          </>
+        ) : (
+        <>
         <DialogHeader>
           <p className="text-xs font-bold uppercase tracking-wider text-edu">
             {mode === "demo" ? "Free demo class" : "Enrollment"} · Step {Math.min(step + 1, 4)} of 4
@@ -232,7 +289,8 @@ export function RegistrationDialog({
             <span />
           )}
           {step < 3 ? (
-            <Button variant="edu" size="lg" onClick={next}>
+            <Button variant="edu" size="lg" onClick={next} disabled={saving}>
+              {saving && <Loader2 className="animate-spin" />}
               {step === 2 ? (
                 <>
                   <Sparkles /> {mode === "demo" ? "Book my demo" : "Reserve my seat"}
@@ -249,6 +307,8 @@ export function RegistrationDialog({
             </Button>
           )}
         </div>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );

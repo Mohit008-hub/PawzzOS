@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ListBusinessDialog } from "@/components/animals/ListBusinessDialog";
+import { AccountMenu } from "@/components/site/AccountMenu";
 
 const tabs = [
   { to: "/", label: "Practo for Animals", short: "Animal Care", icon: PawPrint, tone: "primary" },
@@ -35,14 +36,14 @@ export function SiteHeader() {
           <span className="sm:hidden">Programs</span>
         </a>
       </Button>
-    ) : (
+    ) : pathname.startsWith("/content-studio") ? (
       <Button variant="studio" size="sm" asChild>
         <a href="#generator">
           <Sparkles /> <span className="hidden sm:inline">Generate a Carousel</span>
           <span className="sm:hidden">Generate</span>
         </a>
       </Button>
-    );
+    ) : null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
@@ -76,7 +77,10 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <div className="ml-auto">{cta}</div>
+        <div className="ml-auto flex items-center gap-2">
+          {cta}
+          <AccountMenu />
+        </div>
       </div>
 
       {/* Mobile tabs */}
