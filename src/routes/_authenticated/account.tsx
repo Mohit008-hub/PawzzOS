@@ -121,7 +121,10 @@ function ProfileForm({ uid }: { uid: string }) {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (form.phone && !/^[+\d][\d\s-]{8,15}$/.test(form.phone.trim())) return toast.error("Enter a valid phone number");
+    if (form.phone && !/^[+\d][\d\s-]{8,15}$/.test(form.phone.trim())) {
+      toast.error("Enter a valid phone number");
+      return;
+    }
     save.mutate();
   }
 
@@ -199,7 +202,10 @@ function PetsSection({ uid }: { uid: string }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (pet.name.trim().length < 1) return toast.error("Give your pet a name");
+            if (pet.name.trim().length < 1) {
+              toast.error("Give your pet a name");
+              return;
+            }
             add.mutate();
           }}
           className="mb-4 grid gap-3 rounded-2xl border border-dashed border-primary/40 bg-secondary/50 p-4"

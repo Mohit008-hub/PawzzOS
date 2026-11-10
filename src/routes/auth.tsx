@@ -19,8 +19,8 @@ type Mode = "signin" | "signup" | "forgot";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string; mode?: "signin" | "signup" } => ({
-    ...(typeof search.redirect === "string" ? { redirect: search.redirect } : {}),
-    ...(search.mode === "signup" || search.mode === "signin" ? { mode: search.mode } : {}),
+    ...(typeof search["redirect"] === "string" ? { redirect: search["redirect"] } : {}),
+    ...(search["mode"] === "signup" || search["mode"] === "signin" ? { mode: search["mode"] } : {}),
   }),
   head: () => ({
     meta: [
@@ -48,7 +48,7 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<Partial<Record<"name" | "email" | "password", string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<"name" | "email" | "password", string | undefined>>>({});
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState<{ email: string; kind: "confirm" | "reset" } | null>(null);
 
