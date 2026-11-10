@@ -1,4 +1,4 @@
-import { toPng } from "html-to-image";
+import { getFontEmbedCSS, toPng } from "html-to-image";
 import {
   Bookmark,
   ChevronLeft,
@@ -55,10 +55,12 @@ export function CarouselPreview({
   async function exportAll() {
     setExporting(true);
     try {
+      const first = exportRefs.current[0];
+      const fontEmbedCSS = first ? await getFontEmbedCSS(first) : undefined;
       for (let k = 0; k < slides.length; k++) {
         const node = exportRefs.current[k];
         if (!node) continue;
-        const url = await toPng(node, { pixelRatio: 2, cacheBust: true, skipFonts: false });
+        const url = await toPng(node, { pixelRatio: 2, ...(fontEmbedCSS ? { fontEmbedCSS } : {}) });
         const a = document.createElement("a");
         a.href = url;
         a.download = `carousel-slide-${k + 1}.png`;
