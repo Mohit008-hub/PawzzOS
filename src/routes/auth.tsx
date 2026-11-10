@@ -6,11 +6,9 @@ import { z } from "zod";
 
 import heroVet from "@/assets/hero-vet.jpg";
 import { Field } from "@/components/animals/ListBusinessDialog";
-import { GoogleButton } from "@/components/auth/GoogleButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyAuthError, linkErrorFromUrl } from "@/lib/auth-errors";
 import { AUTH_REDIRECT_KEY, safeRedirect } from "@/lib/auth-redirect";
@@ -51,7 +49,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Partial<Record<"name" | "email" | "password", string | undefined>>>({});
   const [busy, setBusy] = useState(false);
-  const [googleBusy, setGoogleBusy] = useState(false);
   const [sentTo, setSentTo] = useState<{ email: string; kind: "confirm" | "reset" } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -69,7 +66,7 @@ function AuthPage() {
     window.history.replaceState(null, "", window.location.pathname + window.location.search);
   }, []);
 
-  // Signed in (password, Google, email confirmation link, or already had a session) → go to the intended page.
+  // Signed in (password, email confirmation link, or already had a session) → go to the intended page.
   useEffect(() => {
     if (loading || !user) return;
     const stored = sessionStorage.getItem(AUTH_REDIRECT_KEY);
@@ -141,34 +138,6 @@ function AuthPage() {
       setFormError(friendlyAuthError(err instanceof Error ? err.message : "", mode === "forgot" ? "reset" : mode));
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function onGoogle() {
-    setFormError(null);
-    setGoogleBusy(true);
-    // Remember where to go after Google returns (the effect above reads and clears it).
-    sessionStorage.setItem(AUTH_REDIRECT_KEY, safeRedirect(search.redirect));
-    try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth` });
-      if (result.redirected) return; // the browser is leaving for Google
-      if (result.error) {
-        sessionStorage.removeItem(AUTH_REDIRECT_KEY);
-        const msg = result.error.message?.toLowerCase() ?? "";
-        setFormError(
-          msg.includes("popup") || msg.includes("closed") || msg.includes("cancel")
-            ? "Google sign-in was closed before it finished. Please try again (allow pop-ups if asked)."
-            : "Google sign-in didn't complete. Please try again.",
-        );
-        return;
-      }
-      toast.success("Signed in with Google");
-      // Session is set — the effect above takes you to the right page.
-    } catch {
-      sessionStorage.removeItem(AUTH_REDIRECT_KEY);
-      setFormError("Google sign-in didn't complete. Please try again.");
-    } finally {
-      setGoogleBusy(false);
     }
   }
 
@@ -257,17 +226,6 @@ function AuthPage() {
               </div>
             )}
 
-            {mode !== "forgot" && (
-              <>
-                <div className="mt-6">
-                  <GoogleButton onClick={onGoogle} disabled={busy || googleBusy} loading={googleBusy} />
-                </div>
-                <div className="mt-6 flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="h-px flex-1 bg-border" /> or with email <span className="h-px flex-1 bg-border" />
-                </div>
-              </>
-            )}
-
             <form onSubmit={onSubmit} className="mt-6 grid gap-4" noValidate>
               {mode === "signup" && (
                 <Field label="Full name" error={errors.name}>
@@ -293,7 +251,7 @@ function AuthPage() {
                   Forgot password?
                 </button>
               )}
-              <Button type="submit" variant="hero" size="xl" disabled={busy || googleBusy}>
+              <Button type="submit" variant="hero" size="xl" disabled={busy}>
                 {busy && <Loader2 className="animate-spin" />}
                 {mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}
               </Button>
