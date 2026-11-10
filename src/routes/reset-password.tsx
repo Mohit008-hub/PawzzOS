@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { KeyRound, Loader2 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { Field } from "@/components/animals/ListBusinessDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError, linkErrorFromUrl } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -30,8 +31,11 @@ function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   useEffect(() => {
+    const le = linkErrorFromUrl(window.location.hash, window.location.search);
+    if (le) setLinkError("This reset link has expired or was already used. Request a new one from the sign-in page.");
     if (window.location.hash.includes("type=recovery")) setReady(true);
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setReady(true);
@@ -48,7 +52,7 @@ function ResetPasswordPage() {
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
-    if (error) return setErr(error.message);
+    if (error) return setErr(friendlyAuthError(error.message, "reset"));
     toast.success("Password updated");
     void navigate({ to: "/account", replace: true });
   }
@@ -73,9 +77,14 @@ function ResetPasswordPage() {
             </Button>
           </form>
         ) : (
+          <>
           <p className="mt-2 text-sm text-muted-foreground">
-            Open this page from the reset link in your email. Links expire after a while — request a new one from the sign-in page if needed.
+            {linkError ?? <>Open this page from the reset link in your email. Links expire after a while — request a new one from the sign-in page if needed.</>}
           </p>
+          <Button variant="ghost" className="mt-4" asChild>
+            <Link to="/auth">Go to sign in</Link>
+          </Button>
+          </>
         )}
       </div>
     </div>
