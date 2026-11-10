@@ -150,7 +150,7 @@ function AuthPage() {
     // Remember where to go after Google returns (the effect above reads and clears it).
     sessionStorage.setItem(AUTH_REDIRECT_KEY, safeRedirect(search.redirect));
     try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth` });
       if (result.redirected) return; // the browser is leaving for Google
       if (result.error) {
         sessionStorage.removeItem(AUTH_REDIRECT_KEY);
