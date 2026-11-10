@@ -28,3 +28,10 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Three top-level tabs are separate routes (`/`, `/education`, `/content-studio`) sharing the header/footer in `__root.tsx`; keeps each tab linkable and with its own head metadata.
+- Provider directory data and filter logic live in `src/lib/providers.ts` as pure functions with tests in `src/test/providers.test.ts`; UI only calls `filterProviders` / `nearestEmergency`.
+- AI carousel generation runs through `createServerFn` in `src/lib/carousel.functions.ts`, which lazy-imports `src/lib/ai/gateway.server.ts`; keeps the AI key and prompts server-only.
+- Server functions return `{ ok: false, error, status }` instead of throwing for AI failures so the UI can show a friendly message.
+- Carousel slides are rendered by `SlideCard` with themes defined as `.slide-theme-*` CSS classes in `styles.css`; PNG export uses html-to-image on an offscreen 540px render at 2× (1080×1350).
