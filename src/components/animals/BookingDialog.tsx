@@ -1,5 +1,12 @@
-import { CalendarCheck, CheckCircle2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { CalendarCheck, CheckCircle2, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import { SignInGate } from "@/components/auth/SignInGate";
+import { useAuth, useProfile } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,6 +42,17 @@ export function BookingDialog({ provider, onClose }: { provider: Provider | null
   const [phone, setPhone] = useState("");
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
+  const profile = useProfile();
+  const queryClient = useQueryClient();
+
+  // Prefill contact details from the signed-in user's profile.
+  useEffect(() => {
+    if (!provider || !profile.data) return;
+    setName((n) => n || profile.data?.full_name || "");
+    setPhone((ph) => ph || profile.data?.phone || "");
+  }, [provider, profile.data]);
 
   function close() {
     onClose();
@@ -45,18 +63,41 @@ export function BookingDialog({ provider, onClose }: { provider: Provider | null
     }, 300);
   }
 
-  function confirm() {
+  async function confirm() {
     if (!slot) return setErr("Pick a time slot");
     if (name.trim().length < 2) return setErr("Enter your name");
     if (!/^[+\d][\d\s-]{8,15}$/.test(phone.trim())) return setErr("Enter a valid phone number");
+    if (!provider || !user) return;
     setErr("");
+    setSaving(true);
+    const { error } = await supabase.from("bookings").insert({
+      user_id: user.id,
+      provider_id: provider.id,
+      provider_name: provider.name,
+      pet,
+      booking_day: `${days[day]?.label}, ${days[day]?.sub}`,
+      slot,
+      contact_name: name.trim(),
+      phone: phone.trim(),
+    });
+    setSaving(false);
+    if (error) {
+      toast.error("Couldn't save your booking. Please try again.");
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ["bookings", user.id] });
     setDone(true);
   }
 
   return (
     <Dialog open={!!provider} onOpenChange={(o) => !o && close()}>
       <DialogContent className="sm:max-w-lg">
-        {done ? (
+        {!user ? (
+          <SignInGate
+            title="Sign in to book"
+            description={`Create a free account to book ${provider?.name ?? "this clinic"} and keep all your pet's appointments in one place.`}
+          />
+        ) : done ? (
           <div className="py-6 text-center">
             <CheckCircle2 className="mx-auto size-14 text-primary" />
             <h3 className="mt-4 text-2xl font-bold">Appointment requested</h3>
@@ -70,9 +111,14 @@ export function BookingDialog({ provider, onClose }: { provider: Provider | null
               </p>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">The clinic will confirm by SMS on {phone}.</p>
-            <Button variant="hero" className="mt-6" onClick={close}>
-              Done
-            </Button>
+            <div className="mt-6 flex justify-center gap-2">
+              <Button variant="outline" asChild>
+                <Link to="/account">View my bookings</Link>
+              </Button>
+              <Button variant="hero" onClick={close}>
+                Done
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid gap-5">
@@ -153,7 +199,8 @@ export function BookingDialog({ provider, onClose }: { provider: Provider | null
               </Field>
             </div>
             {err && <p className="-mt-2 text-sm font-medium text-destructive">{err}</p>}
-            <Button variant="hero" size="xl" onClick={confirm}>
+            <Button variant="hero" size="xl" onClick={confirm} disabled={saving}>
+              {saving && <Loader2 className="animate-spin" />}
               Confirm booking
             </Button>
           </div>
