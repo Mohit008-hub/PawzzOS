@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ListBusinessDialog } from "@/components/animals/ListBusinessDialog";
+import { AccountMenu } from "@/components/site/AccountMenu";
 
 const tabs = [
   { to: "/", label: "Practo for Animals", short: "Animal Care", icon: PawPrint, tone: "primary" },
@@ -76,7 +77,10 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <div className="ml-auto">{cta}</div>
+        <div className="ml-auto flex items-center gap-2">
+          {cta}
+          <AccountMenu />
+        </div>
       </div>
 
       {/* Mobile tabs */}
