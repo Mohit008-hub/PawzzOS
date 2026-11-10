@@ -5,3 +5,4 @@
 - [x] AI Content Studio: live AI pipeline (research/hooks → slides → editable preview + export), sample carousel, architecture diagram
 - [x] Founder notes (tools/CTAs/rationale) on each tab for the assignment
 - [x] Tests for filter rules; verify in browser
+- [x] Accounts: sign-in page (email + Google), password reset, account page (profile, pets, bookings, courses); booking & enrolling require sign-in
