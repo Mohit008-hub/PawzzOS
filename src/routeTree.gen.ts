@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ContentStudioRouteImport } from './routes/content-studio'
+import { Route as EducationRouteImport } from './routes/education'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContentStudioRoute = ContentStudioRouteImport.update({
+  id: '/content-studio',
+  path: '/content-studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EducationRoute = EducationRouteImport.update({
+  id: '/education',
+  path: '/education',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/content-studio': typeof ContentStudioRoute
+  '/education': typeof EducationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/content-studio': typeof ContentStudioRoute
+  '/education': typeof EducationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/content-studio': typeof ContentStudioRoute
+  '/education': typeof EducationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/content-studio' | '/education'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/content-studio' | '/education'
+  id: '__root__' | '/' | '/content-studio' | '/education'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ContentStudioRoute: typeof ContentStudioRoute
+  EducationRoute: typeof EducationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/content-studio': {
+      id: '/content-studio'
+      path: '/content-studio'
+      fullPath: '/content-studio'
+      preLoaderRoute: typeof ContentStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/education': {
+      id: '/education'
+      path: '/education'
+      fullPath: '/education'
+      preLoaderRoute: typeof EducationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ContentStudioRoute: ContentStudioRoute,
+  EducationRoute: EducationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
