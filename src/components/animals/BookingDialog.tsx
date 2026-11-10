@@ -93,10 +93,16 @@ export function BookingDialog({ provider, onClose }: { provider: Provider | null
     <Dialog open={!!provider} onOpenChange={(o) => !o && close()}>
       <DialogContent className="sm:max-w-lg">
         {!user ? (
+          <>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Sign in to book</DialogTitle>
+            <DialogDescription>An account is needed to book an appointment.</DialogDescription>
+          </DialogHeader>
           <SignInGate
             title="Sign in to book"
             description={`Create a free account to book ${provider?.name ?? "this clinic"} and keep all your pet's appointments in one place.`}
           />
+          </>
         ) : done ? (
           <div className="py-6 text-center">
             <CheckCircle2 className="mx-auto size-14 text-primary" />
