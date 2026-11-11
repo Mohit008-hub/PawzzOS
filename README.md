@@ -1,4 +1,4 @@
-# Pixel-Perfect Replica
+# PawzzOS
 
 Implement exactly the screenshot and nothing else
 
